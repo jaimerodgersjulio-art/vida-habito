@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vida Hábito - Juego Saludable</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .catch(err => console.error("SW fallo:", err));
+  }
+</script>
+<body>
+  <header class="app-header">
+    <h1>Vida Hábito</h1>
+    <div class="stats">
+      <div class="stat"><span>👤</span><input id="playerName" type="text" placeholder="Tu nombre" /></div>
+      <div class="stat"><span>❤️ Vida</span><progress id="hpBar" max="100" value="50"></progress><span id="hpText">50/100</span></div>
+      <div class="stat"><span>😊 Ánimo</span><progress id="moodBar" max="100" value="50"></progress><span id="moodText">50/100</span></div>
+      <div class="stat"><span>⭐ Nivel</span><span id="levelText">1</span> (<span id="xpText">0/100 XP</span>)</div>
+      <div class="stat"><span>🪙 Monedas</span><span id="coinsText">0</span></div>
+      <div class="stat"><span>🔥 Racha</span><span id="streakText">0 días</span></div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="misiones">Misiones</button>
+    <button class="tab-btn" data-tab="avatar">Avatar</button>
+    <button class="tab-btn" data-tab="tienda">Tienda</button>
+    <button class="tab-btn" data-tab="estadisticas">Estadísticas</button>
+    <button class="tab-btn" data-tab="config">Configuración</button>
+  </nav>
+
+  <main>
+    <!-- Sección Misiones -->
+    <section id="misiones" class="tab active">
+      <h2>Misiones Diarias</h2>
+      <p>Completa hábitos saludables para sumar vida, ánimo y monedas. Si no los cumples al cerrar el día, perderás vida.</p>
+      <div id="missionList" class="mission-list"></div>
+      <div class="day-actions">
+        <button id="closeDayBtn" class="primary">Cerrar día</button>
+        <button id="resetTodayBtn" class="secondary">Restablecer hoy</button>
+      </div>
+    </section>
+
+    <!-- Sección Avatar -->
+    <section id="avatar" class="tab">
+      <h2>Tu Avatar</h2>
+      <div class="avatar-wrapper">
+        <svg id="avatarSvg" viewBox="0 0 200 220" width="200" height="220" aria-label="Avatar">
+          <!-- Cabeza -->
+          <circle id="head" cx="100" cy="80" r="45" fill="#F2C1A0" stroke="#000" stroke-width="1" />
+          <!-- Cabello (formas simples) -->
+          <path id="hair" d="M55,70 Q100,20 145,70 Q100,45 55,70 Z" fill="#2D1B10" />
+          <!-- Ojos -->
+          <circle cx="80" cy="80" r="4" fill="#000" />
+          <circle cx="120" cy="80" r="4" fill="#000" />
+          <!-- Boca -->
+          <path d="M80,100 Q100,110 120,100" stroke="#C04040" stroke-width="3" fill="transparent" />
+          <!-- Cuerpo -->
+          <rect x="70" y="125" width="60" height="70" rx="10" fill="#3A86FF" />
+        </svg>
+        <div class="avatar-controls">
+          <label>Color de piel: <input type="color" id="skinColor" value="#F2C1A0" /></label>
+          <label>Color de cabello: <input type="color" id="hairColor" value="#2D1B10" /></label>
+          <label>Estilo de cabello:
+            <select id="hairStyle">
+              <option value="corto">Corto</option>
+              <option value="largo">Largo</option>
+              <option value="rulos">Rulos</option>
+              <option value="calvo">Calvo</option>
+            </select>
+          </label>
+          <button id="randomAvatar" class="secondary">Aleatorio</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección Tienda -->
+    <section id="tienda" class="tab">
+      <h2>Tienda de Gustos</h2>
+      <p>Usa tus monedas para comprar gustos. Algunos reducen un poco la vida pero suben el ánimo. ¡Equilibrio!</p>
+      <div id="shopList" class="shop-list"></div>
+    </section>
+
+    <!-- Sección Estadísticas -->
+    <section id="estadisticas" class="tab">
+      <h2>Estadísticas</h2>
+      <div class="stats-grid">
+        <div>
+          <h3>Resumen</h3>
+          <ul id="summaryStats"></ul>
+        </div>
+        <div>
+          <h3>Historial (últimos 7 días)</h3>
+          <ul id="historyList"></ul>
+        </div>
+      </div>
+      <div class="backup-actions">
+        <button id="exportBtn" class="secondary">Exportar progreso (JSON)</button>
+        <label class="import-label">Importar progreso
+          <input type="file" id="importFile" accept="application/json" />
+        </label>
+      </div>
+    </section>
+
+    <!-- Sección Configuración -->
+    <section id="config" class="tab">
+      <h2>Configuración</h2>
+      <div class="config-grid">
+        <div class="config-card">
+          <h3>Recordatorios</h3>
+          <p>(Experimental) Notificaciones del navegador para agua y pausas activas.</p>
+          <button id="notifyBtn" class="secondary">Activar notificaciones</button>
+        </div>
+        <div class="config-card">
+          <h3>Editar Misiones</h3>
+          <p>Añade o ajusta tus hábitos.</p>
+          <form id="addMissionForm">
+            <input type="text" id="mName" placeholder="Nombre de misión" required />
+            <input type="text" id="mCategory" placeholder="Categoría" required />
+            <input type="number" id="mHp" placeholder="Vida (+/-)" value="5" />
+            <input type="number" id="mCoins" placeholder="Monedas (+/-)" value="5" />
+            <input type="number" id="mXp" placeholder="XP" value="10" />
+            <input type="number" id="mPenalty" placeholder="Penalización de vida si no se cumple" value="-3" />
+            <button type="submit" class="primary">Añadir misión</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>Hecho con 🧠 + ❤️ para hábitos saludables. v1.0</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
